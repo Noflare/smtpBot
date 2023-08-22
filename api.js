@@ -8,6 +8,7 @@ const server = http.createServer(app);
 const io = socketIO(server);
 
 const SERVER_PORT = 3000; // Port du serveur WebSocket
+const SERVER_IP = '10.0.0.4'
 
 io.on('connection', socket => {
     console.log('Client connected');
@@ -32,6 +33,6 @@ fs.watch('links.txt', (event, filename) => {
     }
 });
 
-server.listen(SERVER_PORT, () => {
-    console.log(`Server listening on port ${SERVER_PORT}`);
+server.listen(SERVER_PORT, SERVER_IP, () => {
+    console.log(`Server listening on ${SERVER_IP}:${SERVER_PORT}`);
 });
