@@ -2,7 +2,7 @@ import asyncio
 from aiosmtpd.controller import Controller
 from email import message_from_bytes
 import re
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
 import threading
 import multiprocessing
@@ -45,6 +45,14 @@ def start_smtp_server():
 
 def start_api_server():
     socketio.run(app, host='localhost', port=5000)
+
+@app.route('/')
+def index():
+    return "Server is online."
+
+@socketio.on('connect')
+def handle_connect():
+    emit('latest_link', {"latest_link": latest_link})
 
 if __name__ == '__main__':
     smtp_process = multiprocessing.Process(target=start_smtp_server)
