@@ -2,15 +2,8 @@ import asyncio
 from aiosmtpd.controller import Controller
 from email import message_from_bytes
 import re
-from flask import Flask, render_template, jsonify
-from flask_socketio import SocketIO, emit
-import threading
 import multiprocessing
-
-app = Flask(__name__)
-socketio = SocketIO(app)
-
-latest_link = ""
+from multiprocessing import Process
 
 class MailHandler:
     async def handle_RCPT(self, server, session, envelope, address, rcpt_options):
@@ -30,33 +23,21 @@ class MailHandler:
             links = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', plain_text_part)
 
             if links:
-                global latest_link
-                latest_link = links[-1]  # Update with the latest link
-                socketio.emit('latest_link', {"latest_link": latest_link})
+                latest_link = links[-1]  # Update the latest link
+
+                # Save the latest link to a file
+                with open('links.txt', 'w') as file:
+                    file.write(latest_link)
 
         print()
         print('End of message')
         return '250 Message accepted for delivery'
 
 def start_smtp_server():
-    controller = Controller(MailHandler(), hostname='localhost', port=25)
+    controller = Controller(MailHandler(), hostname='10.0.0.4', port=25)
     controller.start()
     asyncio.get_event_loop().run_forever()
 
-def start_api_server():
-    socketio.run(app, host='localhost', port=5000)
-
-@app.route('/')
-def index():
-    return "Server is online."
-
-@socketio.on('connect')
-def handle_connect():
-    emit('latest_link', {"latest_link": latest_link})
-
 if __name__ == '__main__':
-    smtp_process = multiprocessing.Process(target=start_smtp_server)
+    smtp_process = Process(target=start_smtp_server)
     smtp_process.start()
-
-    api_process = threading.Thread(target=start_api_server)
-    api_process.start()
