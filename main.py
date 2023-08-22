@@ -4,6 +4,8 @@ from email import message_from_bytes
 import re
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
+import threading
+import multiprocessing
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -36,17 +38,17 @@ class MailHandler:
         print('End of message')
         return '250 Message accepted for delivery'
 
-controller = Controller(MailHandler(), hostname='10.0.0.4', port=25)
-controller.start()
-asyncio.get_event_loop().run_forever()
+def start_smtp_server():
+    controller = Controller(MailHandler(), hostname='localhost', port=25)
+    controller.start()
+    asyncio.get_event_loop().run_forever()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@socketio.on('connect')
-def handle_connect():
-    emit('latest_link', {"latest_link": latest_link})
+def start_api_server():
+    socketio.run(app, host='localhost', port=5000)
 
 if __name__ == '__main__':
-    socketio.run(app, host='10.0.0.4', port=5000)
+    smtp_process = multiprocessing.Process(target=start_smtp_server)
+    smtp_process.start()
+
+    api_process = threading.Thread(target=start_api_server)
+    api_process.start()
