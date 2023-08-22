@@ -22,9 +22,11 @@ class MailHandler:
         if plain_text_part:
             # Extract links using regular expression
             links = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', plain_text_part)
-            for link in links:
-                print("Extracted link:")
-                print(link)
+            with open('links.txt', 'a') as file:
+                for link in links:
+                    print("Extracted link:")
+                    print(link)
+                    file.write(link + '\n')
 
         print()
         print('End of message')
